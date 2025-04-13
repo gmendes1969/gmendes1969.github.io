@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador Claro</title>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ec1d25;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background-color: white;
+      color: #333;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #ec1d25;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    td {
+      padding: 10px 0;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .result {
+      font-weight: bold;
+      font-size: 1.3em;
+      color: green;
+    }
+
+    .data {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .whatsapp-button {
+      display: block;
+      margin: 20px auto 0 auto;
+      padding: 10px 20px;
+      background-color: #25d366;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Simulador de Custos</h1>
+
+  <div class="container" id="simulador">
+    <div class="logo">Claro</div>
+    <table>
+      <tr>
+        <td>Sr/Sra:</td>
+        <td><input type="text" id="cliente" oninput="calcular()" placeholder="Digite o nome"></td>
+      </tr>
+      <tr>
+        <td>DDD:</td>
+        <td><input type="number" id="ddd" maxlength="2" oninput="validarDDD(this)" placeholder="Ex: 11"></td>
+      </tr>
+      <tr>
+        <td>Celular:</td>
+        <td><input type="text" id="celularNum" maxlength="9" oninput="validarCelular(this)" placeholder="Ex: 912345678"></td>
+      </tr>
+      <tr>
+        <td>Multi 1 (Valor Fixo):</td>
+        <td>R$ <span id="multi">159,90</span></td>
+      </tr>
+      <tr>
+        <td>Gasto com celular:</td>
+        <td><input type="number" id="celular" oninput="calcular()" step="0.01"></td>
+      </tr>
+      <tr>
+        <td>Gasto com Tel fixo:</td>
+        <td><input type="number" id="telfixo" oninput="calcular()" step="0.01"></td>
+      </tr>
+      <tr>
+        <td colspan="2" class="result">
+          <span id="clienteNome">Sr/Sra,</span> sua BL sai por R$ <span id="resultado">159.90</span>
+        </td>
+      </tr>
+    </table>
+
+    <div class="data" id="dataCalculo">Data do cálculo: --/--/----</div>
+    <button class="whatsapp-button" onclick="enviarWhatsapp()">Enviar por WhatsApp</button>
+  </div>
+
+  <script>
+    function validarDDD(input) {
+      if (input.value.length > 2) input.value = input.value.slice(0, 2);
+    }
+
+    function validarCelular(input) {
+      input.value = input.value.replace(/\D/g, '');
+      if (input.value.length > 9) input.value = input.value.slice(0, 9);
+      if (input.value.length > 0 && input.value[0] !== '9') {
+        input.setCustomValidity("O número deve começar com 9");
+        input.reportValidity();
+      } else {
+        input.setCustomValidity("");
+      }
+    }
+
+    function calcular() {
+      const multi = 159.90;
+      const celular = parseFloat(document.getElementById('celular').value) || 0;
+      const telfixo = parseFloat(document.getElementById('telfixo').value) || 0;
+      const nome = document.getElementById('cliente').value.trim();
+
+      const resultado = multi - celular - telfixo;
+
+      document.getElementById('resultado').textContent = resultado.toFixed(2);
+      document.getElementById('clienteNome').textContent = nome ? `Sr/Sra ${nome},` : 'Sr/Sra,';
+
+      const hoje = new Date();
+      const dataFormatada = hoje.toLocaleDateString('pt-BR');
+      document.getElementById('dataCalculo').textContent = "Data do cálculo: " + dataFormatada;
+    }
+
+    function formatarNumero(ddd, numero) {
+      if (!ddd || !numero || numero.length < 9) return "";
+      const parte1 = numero.slice(0, 5);
+      const parte2 = numero.slice(5);
+      return `(${ddd}) ${parte1}-${parte2}`;
+    }
+
+    function enviarWhatsapp() {
+      html2canvas(document.querySelector("#simulador")).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+
+        const nome = document.getElementById('cliente').value.trim() || 'Cliente';
+        const ddd = document.getElementById('ddd').value.trim();
+        const celularNum = document.getElementById('celularNum').value.trim();
+        const valorBL = document.getElementById('resultado').textContent;
+        const numeroFormatado = formatarNumero(ddd, celularNum);
+
+        const texto = `Olá, segue o cálculo da BL para Sr/Sra ${nome}. Valor: R$ ${valorBL}\nCelular: ${numeroFormatado}`;
+        const link = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+
+        window.open(link, '_blank');
+
+        // Exibe imagem da tela
+        const novaJanela = window.open();
+        novaJanela.document.write(`<img src="${imgData}" style="width:100%;">`);
+      });
+    }
+
+    window.onload = calcular;
+  </script>
+
+</body>
+</html>
